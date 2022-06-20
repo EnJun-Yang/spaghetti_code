@@ -1,0 +1,22 @@
+### restart
+library(biomaRt)
+listMarts()
+mart <- useEnsembl("ensembl","hsapiens_gene_ensembl", mirror = "asia")
+test <- getBM(filters="refseq_mrna", attributes="external_gene_name", values=df$V14, mart=mart)
+df <- read.table("~/Documents/JEC_lab/Analysis/Dang/jecimcb-bulkseq-requests/out.sam")
+df1 <- read.table("~/Documents/JEC_lab/Analysis/Dang/jecimcb-bulkseq-requests/Aligned.sam")
+str(df1)
+head(listFilters(mart), n=100)
+head(listFilters(mart), n=200)
+str(df)
+df2 <- df[which(df$V12=="NH:i:1"),]
+str(df2)
+range(as.factor(df$V12))
+(as.factor(df$V12))
+str(df1)
+df3 <- df1
+df3$V11 <- rep("???????@@@@@@@AAAAAAA", 147110)
+str(df3)
+nchar(df3$V11[1])
+write.table(df3, "~/Documents/JEC_lab/Analysis/Dang/jecimcb-bulkseq-requests/Aligned_Qscore.sam", quote=FALSE, sep="\t", col.names=FALSE)
+###writing false Qscore for htseq-count, since the Aligned.transcriptome.sam has too many multimappers.

@@ -1,0 +1,84 @@
+BiocManager::install(BSgenome)
+BiocManager::install("BSgenome")
+library(BSgenome)
+?available.genomes()
+available.genomes()
+?available.genomes()
+getBSgenome(BSgenome.Hsapiens.UCSC.hg38)
+getBSgenome("BSgenome.Hsapiens.UCSC.hg38")
+library(BiocManager)
+install("BSgenome.Hsapiens.UCSC.hg38")
+library(BSgenome.Hsapiens.UCSC.hg38)
+genome <- BSgenome.Hsapiens.UCSC.hg38
+df <- read.table("~/Documents/JEC_lab/Analysis/Dang/DRIVE_shRNA_sequences.txt ")
+df <- read.table("~/Documents/JEC_lab/Analysis/Dang/DRIVE_shRNA_sequences.txt")
+str(df)
+df <- readDNAStringSet("~/Documents/JEC_lab/Analysis/Dang/DRIVE_shRNA.fasta")
+str(df)
+head(df)
+writeHits <- function(seqname, matches, strand, file="", append=FALSE)
+{
+if (file.exists(file) && !append)
+warning("existing file ", file, " will be overwritten with 'append=FALSE'")
+if (!file.exists(file) && append)
+warning("new file ", file, " will have no header with 'append=TRUE'")
+hits <- data.frame(seqname=rep.int(seqname, length(matches)),
+start=start(matches),
+end=end(matches),
+strand=rep.int(strand, length(matches)),
+patternID=names(matches),
+check.names=FALSE)
+write.table(hits, file=file, append=append, quote=FALSE, sep="\t",
+row.names=FALSE, col.names=!append)
+}
+runAnalysis1 <- function(dict0, outfile="")
+{
+library(BSgenome.Hsapiens.UCSC.hg38)
+genome <- BSgenome.Hsapiens.UCSC.hg38
+seqnames <- seqnames(genome)
+seqnames_in1string <- paste(seqnames, collapse=", ")
+cat("Target:", providerVersion(genome),
+"chromosomes", seqnames_in1string, "\n")
+append <- FALSE
+for (seqname in seqnames) {
+subject <- genome[[seqname]]
+cat(">>> Finding all hits in chromosome", seqname, "...\n")
+for (i in seq_len(length(dict0))) {
+patternID <- names(dict0)[i]
+pattern <- dict0[[i]]
+plus_matches <- matchPattern(pattern, subject)
+names(plus_matches) <- rep.int(patternID, length(plus_matches))
+writeHits(seqname, plus_matches, "+", file=outfile, append=append)
+append <- TRUE
+rcpattern <- reverseComplement(pattern)
+minus_matches <- matchPattern(rcpattern, subject)
+names(minus_matches) <- rep.int(patternID, length(minus_matches))
+writeHits(seqname, minus_matches, "-", file=outfile, append=append)
+}
+cat(">>> DONE\n")
+}
+}
+
+### Test 2
+df <- read.table("~/Documents/JEC_lab/Analysis/Dang/jecimcb-bulkseq-requests/out.sam")
+str(df)
+df2 <- df[which(df$V12=="NH:i:1"),]
+str(df2)
+length(unique(df2$V1))
+df2$V14 <- gsub("\\..*","",df2$V3)
+levels(as.factor(df2$V6))
+### all are complete matches 21M
+library(biomaRt)
+listMarts()
+mart <- useMart(biomart="ensembl", dataset = "hsapiens_gene_ensembl", verbose = TRUE, host = "dec2021.archive.ensembl.org")
+length(unique(df2$V14))
+### could only find 2061 unique genes with shRNAs
+df2$V15 <- rep("None", 27526)
+for (i in c(1:27526)) {
+df2$V15[i] <- getBM(filters="refseq_mrna", attributes="external_gene_name", values=df2$V14[i], mart=mart)
+}
+str(df2)
+head(df2)
+df3 <- apply(df2, 2, as.character)
+write.table(df3, file="~/Documents/JEC_lab/Analysis/Dang/Aligned_transcriptome_genes.sam", sep="\t", quote=FALSE)
+

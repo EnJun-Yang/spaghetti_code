@@ -1,0 +1,130 @@
+library(Seurat)
+library(Matrix)
+library(dplyr)
+setwd('/home/enjun_cloud/Public/202005_Zhang_covid')
+samples = read.delim2("samples.txt", header=TRUE, stringsAsFactors=FALSE, check.names=FALSE, sep="\t")
+head(samples)
+dat <- Read10X(data.dir="../Tabib/GSM3660650_SC249NORbal_fresh")
+nCov.list=list()
+result.matrix=matrix(0,dim(samples)[1],4)
+i=0
+for (sample_ in samples$sample){
+print(sample_)
+i=i+1
+print(i)
+result.matrix[i,1]=sample_
+samplesi=samples %>% filter(.,sample == sample_)
+if(samplesi$group =='HC'){
+result.matrix[i,2]=0
+result.matrix[i,3]=0
+result.matrix[i,4]=0
+}
+else{
+datafile=intersect(list.files(pattern=sample_), list.files(pattern="matrix"))
+tmp=Read10X_h5(filename=datafile)
+tmp.gene=tmp['nCoV',]
+aa <- summary(tmp.gene)
+bb = sum(tmp.gene)
+result.matrix[i,2]=aa[[4]]
+result.matrix[i,3]=aa[[6]]
+result.matrix[i,4]=bb
+}
+}
+result.dataframe=as.data.frame(result.matrix)
+colnames(result.dataframe)=c('sample','nCoV_mean', 'nCoV_max', 'nCoV_sum')
+write.table(result.dataframe,file='virusstats.txt',row.names=FALSE, quote=FALSE, sep='\t')
+savehistory("20200601_virus_summary.Rlog")
+
+### Clustering
+library(Seurat)
+library(Matrix)
+library(dplyr)
+library(ggplot2)
+setwd('/home/enjun_cloud/Public/202005_Zhang_covid')
+nCoV <- readRDS("202005_zhang_integrated.rds")
+nCoV.integrated <- IntegrateData(anchorset=nCoV, dims=1:50, features.to.integrate = rownames(nCoV))
+sample_info = as.data.frame(colnames(nCoV.integrated))
+colnames(sample_info) = c('ID')
+rownames(sample_info) = sample_info$ID
+sample_info$sample = nCoV.integrated@meta.data$orig.ident
+head(sample_info)
+samples = read.delim2("samples.txt", header=TRUE, stringsAsFactors=FALSE, check.names=FALSE, sep="\t")
+sample_info = dplyr :: left_join(sample_info, samples)
+head(sample_info)
+rownames(sample_info) = sample_info$ID
+nCoV.integrated = AddMetaData(object=nCoV.integrated, metadata = sample_info)
+DefaultAssay(nCoV.integrated) <- "RNA"
+nCoV.integrated[['percent.mito']] <- PercentageFeatureSet(nCoV.integrated, pattern="^MT-")
+nCoV.integrated <- NormalizeData(object=nCoV.integrated, normalization.method="LogNormalize", scale.factor=1e4
+nCoV.integrated <- FindVariableFeatures(object=nCoV.integrated, selection.method="vst", nfeatures=2000, verbose = FALSE)
+nCoV.integrated <- ScaleData(nCoV.integrated, verbose=FALSE, vars.to.regress=c("nCount_RNA", "percent.mito"))
+DefaultAssay(nCoV.integrated) <- "integrated"
+dpi=300
+png(file="output/integratedqc.png", width=dpi*16, height=dpi*8, units="px", res=dpi,type='cairo')
+VlnPlot(object=nCoV.integrated, features=c("nFeature_RNA", "nCount_RNA"), ncol=2)
+dev.off()
+png(file="output/integrated-umi-gene.png", width=dpi*6, height=dpi*5, units="px", res=dpi,type='cairo')
+FeatureScatter(object=nCoV.integrated, feature1="nCount_RNA", feature2="nFeature_RNA")
+dev.off()
+nCoV.integrated <- ScaleData(nCoV.integrated, verbose=FALSE, vars.to.regress=c("nCount_RNA", "percent.mito"))
+nCoV.integrated <- RunPCA(nCoV.integrated, npcs=100, verbose=FALSE)
+nCoV.integrated <- ProjectDim(object=nCoV.integrated)
+png(file="output/integrated_pca.png", width=dpi*10, height=dpi*6, units="px", type='cairo')
+ElbowPlot(object=nCoV.integrated,ndims=100)
+dev.off()
+nCoV.integrated <- FindNeighbors(object=nCoV.integrated, dims=1:50)
+nCoV.integrated <- FindClusters(object=nCoV.integrated, resolution=1.2)
+nCoV.integrated <- RunTSNE(object=nCoV.integrated, dims=1:50)
+nCoV.integrated <- RunUMAP(object=nCoV.integrated, reduction="pca", dims=1:50)
+saveRDS(nCoV.integrated, file="202005_zhang_clustered.rds")
+savehistory("20200602_cluster.Rlog")
+nCoV.integrated <- readRDS(file="202005_zhang_clustered.rds")
+library(Seurat)
+library(Matrix)
+library(dplyr)
+library(ggplot2)
+samples = read.delim2("samples.txt", header=TRUE, stringsAsFactors=FALSE, check.names=FALSE, sep="\t")
+nCoV.integrated <- RunUMAP(object=nCoV.integrated, reduction="pca", dims=1:50)
+dpi=300
+png(file="output/integrated-tsne.png", width=dpi*8, height=dpi*6, units="px", type='cairo')
+DimPlot(object=nCoV.integrated, reduction='tsne',label='TRUE')
+dev.off()
+png(file="output/integrated-umap.png", width=dpi*8, height=dpi*6, units="px", type='cairo')
+DimPlot(object=nCoV.integrated, reduction='umap',label='TRUE')
+dev.off()
+DefaultAssay(nCoV.integrated) <- 'RNA'
+nCoV.integrated@misc$markers <- FindAllMarkers(object=nCoV.integrated, assay='RNA', only.pos=TRUE, test.use='MAST')
+saveRDS(nCoV.integrated, file="202005_zhang_clustered.rds")
+savehistory("20200602_cluster_2.Rlog")
+
+### metabolic genes
+
+.nCoV.integrated <- readRDS(file="202005_zhang_clustered.rds")
+library(Seurat)
+library(Matrix)
+library(dplyr)
+library(ggplot2)
+samples = read.delim2("samples.txt", header=TRUE, stringsAsFactors=FALSE, check.names=FALSE, sep="\t")
+metabolome=read.delim2("~/mount/GCS/metabolic-ribo.txt", header=FALSE, stringsAsFactors=FALSE, check.names=FALSE, sep="\t")
+head(metabolome)
+str(nCoV.integrated)
+metabolome_1 <- UpdateSymbolList(metabolome$V1)
+nCoV.integrated.meta <- ScaleData(nCoV.integrated, features=metabolome$V1, vars.to.regress=c("nCount_RNA", "percent.mito"))
+nCoV.integrated.meta <- RunPCA(nCoV.integrated.meta, features=metabolome$V1,assay="RNA")
+nCoV.integrated.meta <-ProjectDim(object=nCoV.integrated.meta)
+dpi=300
+png(file="output/meta/meta_pca.png", width=dpi*10, height=dpi*6, units="px", type='cairo')
+ElbowPlot(object=nCoV.integrated.meta)
+dev.off()
+nCoV.integrated.meta <-FindNeighbors(object=nCoV.integrated.meta, dims=1:20) 
+nCoV.integrated.meta <- FindClusters(object=nCoV.integrated.meta, resolution= 1.2)
+nCoV.integrated.meta <- RunUMAP(nCoV.integrated.meta, reduction ="pca", dims=1:20)
+DimPlot(object=nCoV.integrated.meta, reduction='umap', label=TRUE)
+png(file="output/meta/meta_umap.png", width=dpi*8, height=dpi*6, units="px", type='cairo')
+DimPlot(object=nCoV.integrated.meta, reduction='umap', label=TRUE)
+dev.off()
+DefaultAssay(nCoV.integrated.meta) <- "RNA"
+nCoV.integrated.meta@misc$markers <- FindAllMarkers(object=nCoV.integrated.meta, assay="RNA", only.pos=TRUE, test.use='MAST')
+saveRDS(nCoV.integrated.meta, file="output/meta/202005_zhang_meta.rds")
+savehistory("output/meta/20200604_meta.Rlog")
+

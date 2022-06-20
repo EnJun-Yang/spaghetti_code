@@ -1,0 +1,88 @@
+### #!/usr/bin/env Rscript
+args = commandArgs(trailingOnly=TRUE)
+if (length(args)==0) {
+    stop("At least one argument must be supplied (google bucket).n", call.=FALSE)
+    }
+# Sample call to script would be Rscript ".R" "gs://something_or_other")
+# } else if (length(args)==1) {
+#  # default output file
+#  args[2] = "out.txt"
+#}
+
+# library(googleAuthR)
+library(googleCloudStorageR)
+### Need to find a way to get the data in a bucket
+# gcs_list_objects(bucket="jecimcb-flowdata", detail="summary")
+
+
+# gcs_auth(json_file=Sys.getenv("GCE_AUTH_FILE"))
+# library(renv) # for local use only
+# renv::activate(project="Rlib")
+# renv::restore(project="Rlib")
+library(cyCombine)
+library(magrittr)
+library(tidyverse)
+raw_data_dir <- args[1]
+
+if(!dir.exists(file.path(getwd(), paste("temp")))) { 
+    dir.create(file.path(getwd(), paste("temp")))
+    } else{ 
+        print ("Temp Dir already exists!")
+    }
+data_dir <- file.path(getwd(), paste("temp"))
+
+gcs_load_all(directory = data_dir, bucket= raw_data_dir, exdir = directory, list = FALSE)
+
+# data_dir <- "/Users/enjunyang/Documents/JEC_lab/Analysis/Rscripts/Cycombine/raw_data"
+panel <- read_csv(paste0(data_dir,"/panel.csv"))
+markers <- panel %>% filter(Type !="none") %>% pull(Marker) %>% str_remove_all("[ _-]")
+
+### creating outs folders for easier copying
+if(!dir.exists(file.path(data_dir, paste("output")))) { 
+    dir.create(file.path(data_dir, paste("output")))
+    } else{ 
+        print ("Output Dir already exists!")
+    }
+output_dir <- file.path(data_dir, paste("output"))
+
+for (cofac in c(5,150)) {
+  
+### creating cofactor folders
+    if(!dir.exists(file.path(output_dir, paste("cofactor", cofac, sep="")))) { 
+    dir.create(file.path(output_dir, paste("cofactor", cofac, sep="")))
+    } else{ 
+        print ("Cofactor Dir already exists!")
+    }
+    cofactor_dir <- file.path(output_dir, paste("cofactor", cofac, sep=""))
+
+### Loop over various rlengths for batch correction, creating folders
+    for (rlen in c(10,100)) {
+        if(!dir.exists(file.path(cofactor_dir, paste("rlen", rlen, sep="")))) { 
+        dir.create(file.path(cofactor_dir, paste("rlen", rlen, sep="")))
+        } else{ 
+            print ("Rlen dir already exists!")
+        }
+        rlen_dir <- file.path(cofactor_dir, paste("rlen",rlen, sep=""))
+        if(!dir.exists(file.path(rlen_dir, "outs"))) { 
+        dir.create(file.path(rlen_dir, "outs"))
+        } else{ 
+            print ("Outs dir already exists!")
+        }
+        if(!dir.exists(file.path(rlen_dir, "figs"))) { 
+        dir.create(file.path(rlen_dir, "figs"))
+        } else{ 
+            print ("Figures dir already exists!")
+        }
+
+### preparing uncorrected data
+        uncorrected <- prepare_data (data_dir=data_dir, markers=markers, metadata=file.path(data_dir,"metadata.csv"), batch_ids="Batch", filename_col="Filename", condition="Condition", down_sample=TRUE, sample_size=5000, seed=473, cofactor= cofac)
+        saveRDS(uncorrected, file = file.path(rlen_dir, "cycombine_raw_uncorrected.RDS"))
+
+### Batch correction
+        corrected <- uncorrected %>% batch_correct(markers=markers, norm_method="scale", rlen=rlen)
+        saveRDS(corrected, file = file.path(rlen_dir, "cycombine_raw_corrected.RDS"))
+        run_analysis(tool = "cycombine", data = "raw", data_dir = rlen_dir, markers = markers)
+    }
+}
+
+gcs_save_all(directory= output_dir, bucket=raw_data_dir)

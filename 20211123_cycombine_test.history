@@ -1,0 +1,94 @@
+library(renv)
+#renv::init(project="Rlib")
+#setRepositories(ind = c(1:6, 8))
+#dev.tools::install_github("biosurf/cyCombine")
+#devtools::install_github("biosurf/cyCombine")
+#library(devtools)
+#install.packages("devtools")
+#library(devtools)
+#devtools::install_github("biosurf/cyCombine")
+#install.packages("png")
+renv::restore(project="Rlib")
+library(cyCombine)
+library(magrittr)
+library(tidyverse)
+#library(premessa) ### Only for obtaining panel details from fcs files
+#paneleditor_GUI
+data_dir <- "/Users/enjunyang/Documents/JEC_lab/Analysis/Sriram/HBV_PMN_flowdata_normalization/WB_PMN_all_events"
+# markers <-c("CD162","CD66B","CD62P","CD10","CD11B","CD49D","CD101","HLADR","CD41","CD15","CD16","CD62L","PDL1","CD64","CD45")
+panel <- read_csv(paste0(data_dir,"/panel.csv"))
+markers <- panel %>% filter(Type !="none") %>% pull(Marker) %>% str_remove_all("[ _-]")
+# uncorrected <- prepare_data (data_dir=data_dir, markers=markers, metadata=file.path(data_dir,"metadata.csv"), batch_ids="Batch", filename_col="Filename", condition="Condition", down_sample=FALSE, seed=473, panel_channel=)
+uncorrected <- prepare_data (data_dir=data_dir, markers=markers, metadata=file.path(data_dir,"metadata.csv"), batch_ids="Batch", filename_col="Filename", condition="Condition", down_sample=FALSE, seed=473, cofactor= 150)
+saveRDS(uncorrected, file = "cycombine/cycombine_raw_uncorrected.RDS")
+corrected <- uncorrected %>% batch_correct(markers=markers, norm_method="scale")
+saveRDS(corrected, file = "cycombine/cycombine_raw_corrected.RDS")
+run_analysis(tool = "cycombine", data = "raw", data_dir = "cycombine", markers = markers)
+# Ran with errors: Error in loadNamespace(name) : there is no package called ‘CD162'
+detect_batch_effect(uncorrected, batch_col="batch", out_dir="cycombine/check_batch", seed=473, name="PMN_raw")
+uncorrected$label <- corrected$label <- labels
+emd <- evaluate_emd(uncorrected, corrected, cell_col="label")
+png(filename="cycombine/emd_violin.png", width=480, height=480, units="px", type="cairo")
+emd$violin
+dev.off()
+png(filename="cycombine/emd_scatter.png", width=480, height=480, units="px", type="cairo")
+emd$scatter
+dev.off()
+emd$reduction
+### EMD reduction is 0.77
+mad <- evaluate_mad(uncorrected, corrected, cell_col="label")
+### MAD score is 0.11
+sam <- sample(1:nrow(uncorrected), 100000)
+plot1 <- plot_dimred(uncorrected[sam, ], "Uncorrected", type = "umap", plot = "batch", markers = markers)
+plot2 <- plot_dimred(corrected[sam, ], "Corrected", type = "umap", plot = "batch", markers = markers)
+plot_save_two(plot1, plot2, "cycombine/umap.png")
+plot_density(uncorrected, corrected, markers=markers, filename="cycombine/density.png", ncol=6, xlim=c(-1,10))
+
+### Continuing analysis
+library(renv)
+ renv::restore(project="Rlib")
+setwd(data_dir)
+corrected <- readRDS("cycombine/cycombine_raw_corrected.RDS")
+uncorrected <- readRDS("cycombine/cycombine_raw_uncorrected.RDS")
+corrected$condition <- uncorrected$condition
+panel <- read_csv(paste0(data_dir,"/panel.csv"))
+markers <- panel %>% filter(Type !="none") %>% pull(Marker) %>% str_remove_all("[ _-]")
+sample <- sample(1:nrow(corrected), 100000)
+plot1 <- plot_dimred(uncorrected[sample, ], "Uncorrected", type = "umap", plot = "condition", markers = markers)
+plot2 <- plot_dimred(corrected[sample, ], "Corrected", type = "umap", plot = "condition", markers = markers)
+# plot_save_two(plot1, plot2, "cycombine/umap_condition.png")
+# Error: Discrete value supplied to continuous scale
+
+### With reverse transform
+
+library(renv)
+renv::restore(project="Rlib")
+library(cyCombine)
+library(magrittr)
+library(tidyverse)
+data_dir <- "/Users/enjunyang/Documents/JEC_lab/Analysis/Sriram/HBV_PMN_flowdata_normalization/WB_PMN_all_events"
+panel <- read_csv(paste0(data_dir,"/panel.csv"))
+markers <- panel %>% filter(Type !="none") %>% pull(Marker) %>% str_remove_all("[ _-]")
+uncorrected <- prepare_data (data_dir=data_dir, markers=markers, metadata=file.path(data_dir,"metadata.csv"), batch_ids="Batch", filename_col="Filename", condition="Condition", down_sample=FALSE, seed=473, cofactor= 50)
+str(uncorrected)
+flowset <- compile_fcs()
+flowset <- compile_fcs(data_dir=data_dir)
+uncorrected_raw <- convert_flowset(flowset=flowset, metadata=file.path(data_dir,"metadata.csv"), filename_col="Filename", condition="Condition", down_sample=FALSE, seed=473)
+str(uncorrected_raw)
+test <- sinh(uncorrected$"CD162::PERCPEF710")*50
+str(test)
+df1 <- data.frame(test, uncorrected_raw"CD162::PERCPEF710")
+df1 <- data.frame(test, uncorrected_raw$"CD162::PERCPEF710")
+library(ggplot2)
+plot(df1[,1], df1[,2])
+df1$diff <- df1[,1] - df1[,2]
+range(df1$diff)
+head(df1)
+df1$percent <- (df1[,1] - df1[,2])/df1[,2]*100
+range(df1$percent)
+length(which(abs(df1$percent) > 5))
+df1[(which(abs(df1$percent)>5)), ]
+length(rownames(df1))
+21/length(rownames(df1))*100
+length(which(abs(df1[,2]) < 20))
+

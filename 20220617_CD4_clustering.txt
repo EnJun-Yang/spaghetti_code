@@ -1,0 +1,253 @@
+library(renv)
+renv::activate(project="~/bin/cyCombine")
+library(cyCombine)
+library(magrittr)
+library(tidyverse)
+data_dir <- "/home/enjunyang/Downloads/data/Tong_Wei_Covid"
+panel <- read_csv(paste0(data_dir,"/TW_Covid_panel.csv"))
+all_markers <- panel %>% filter(Type =="type") %>% pull(Antigen) %>% str_remove_all("[ _-]")
+meta <- read.table(paste0(data_dir, "/Covid_batch_metadata.tsv"), sep=";")
+corrected <- readRDS("../../../cycombine/cycombine_raw_corrected.RDS")
+setwd("spectre_output")
+library(Spectre)
+Spectre::package.check
+Spectre::package.load()
+cell.dat <- corrected
+meta1 <- read.table(paste0(data_dir, "/Covid_batch_metadata.tsv"), sep=";", stringsAsFactors=TRUE)
+meta1$orig.sample <- meta1$sample
+meta1$sample <- as.factor(str_remove_all(as.character(meta1$Filename), ".fcs"))
+cell.dat <- do.add.cols(cell.dat, "sample", meta1, "sample", rmv.ext=TRUE)
+str(cell.dat)
+as.matrix(names(cell.dat))
+cellular.cols <- names(cell.dat)[c(3:30)]
+cluster.cols <- cellular.cols
+sample.col <- "sample"
+group.col <- "Patient.Groups"
+data.frame(table(cell.dat[[group.col]]))
+group.col <- "condition"
+data.frame(table(cell.dat[[group.col]]))
+cell.dat$condition <- as.factor(str_remove_all(as.character(cell.dat$condition), " non-Vaccinated"))
+cell.dat$condition <- as.factor(str_remove_all(as.character(cell.dat$condition), " Vaccinated"))
+str(cell.dat$condition)
+n=length(cell.dat$CD19)
+plot((1:n-1)/(n-1), sort(cell.dat$CD19), type="l", main="CD19 Percentiles", xlab="Percentile", ylab="CD19 arcsinh")
+quantile(cell.dat$CD19, probs= c(0, 0.25, 0.5, 0.75, 0.9, 0.95,1))
+### top 5% of CD19 expression is at about cut off 4.55.
+B.cell.dat <- subset(cell.dat, CD19 > 4.55)
+nonB.cell.dat <- subset(cell.dat, CD19 < 4.55)
+n=length(nonB.cell.dat$CD3IgM)
+plot((1:n-1)/(n-1), sort(nonBcell.dat$CD3IgM), type="l", main="CD19- CD3IgM Percentiles", xlab="Percentile", ylab="CD3IgM arcsinh")
+plot((1:n-1)/(n-1), sort(nonB.cell.dat$CD3IgM), type="l", main="CD19- CD3IgM Percentiles", xlab="Percentile", ylab="CD3IgM arcsinh")
+hist(nonB.cell.dat$CD3IgM, breaks=300)
+ggsave("CD19neg_CD3IgM.png")
+plot((1:n-1)/(n-1), sort(nonB.cell.dat$CD3IgM), type="l", main="CD19- CD3IgM Percentiles", xlab="Percentile", ylab="CD3IgM arcsinh")
+ggsave("CD19neg_CD3IgM_percentile.png")
+quantile(nonB.cell.dat$CD3IgM, probs= c(0, 0.25, 0.5, 0.6, 0.65, 0.675, 0.70, 0.725, 0.75, 1))
+### Shoulder for CD3IgM staining is about 35% of CD19- cells, or at 65 percentile (i.e. CD3IgM >2.89)
+T.cell.dat <- subset(nonB.cell.dat, CD3IgM > 2.89)
+n=length(T.cell.dat$CD4IgD)
+plot((1:n-1)/(n-1), sort(T.cell.dat$CD4IgD), type="l", main="CD19- CD3+ CD4IgD+ Percentiles", xlab="Percentile", ylab="CD4IgD arcsinh")
+### By TW's flowjo analysis, about 50% of T cells are CD4s
+quantile(nonB.cell.dat$CD4IgD, probs= c(0, 0.25, 0.4, 0.45, 0.5, 0.55, 0.6, 0.75, 1))
+hist(T.cell.dat$CD4IgD, breaks=200)
+hist(T.cell.dat$CD8, breaks=200)
+quantile(T.cell.dat$CD8, probs= c(0, 0.25, 0.4, 0.45, 0.5, 0.55, 0.6, 0.75, 1))
+quantile(T.cell.dat$CD4IgD, probs= c(0, 0.25, 0.4, 0.45, 0.5, 0.55, 0.6, 0.75, 1))
+quantile(nonB.cell.dat$CD4IgD, probs= c(0, 0.25, 0.4, 0.45, 0.5, 0.55, 0.6, 0.75, 1))
+plot((1:n-1)/(n-1), sort(T.cell.dat$CD4IgD), type="l", main="CD19- CD3+ CD4IgD+ Percentiles", xlab="Percentile", ylab="CD4IgD arcsinh")
+hist(T.cell.dat$CD4IgD, breaks=200)
+ggsave("CD19neg_CD3pos_CD4IgD_histogram.png")
+plot((1:n-1)/(n-1), sort(T.cell.dat$CD4IgD), type="l", main="CD19- CD3+ CD4IgD+ Percentiles", xlab="Percentile", ylab="CD4IgD arcsinh")
+ggsave("CD19neg_CD3pos_CD4IgD_percentile.png")
+### If 50% of T cells are CD4s, cut off around 3.36
+CD4.cell.dat <- subset(T.cell.dat, CD4IgD > 3.36)
+str(B.cell.dat)
+NROW(B.cell.dat)
+NROW(CD4.cell.dat)
+savehistory("20220617_CD4_test.history")
+saveRDS(B.cell.dat, "B_cell_dat.RDS")
+saveRDS(CD4.cell.dat, "CD4_cell_dat.RDS")
+B.cell.dat <- run.flowsom(B.cell.dat, cluster.cols, meta.k=20)
+sub.targets <- c(500000,500000)
+str(B.cell.dat)
+ls()
+cell.sub <- do.subsample(T.cell.dat, sub.targets, group.col)
+cell.sub <- run.umap(cell.sub, cluster.cols)
+saveRDS(cell.sub, "CD4_cell_sub.RDS")
+B.cell.dat <- run.umap(B.cell.dat, cluster.cols)
+saveRDS(B.cell.dat, "B_cell_dat.RDS")
+savehistory("20220617_CD4_test.history")
+
+### Continuing from 20220617, setting up variables first
+library(renv)
+renv::activate(project="~/bin/cyCombine")
+library(cyCombine)
+library(magrittr)
+library(tidyverse)
+data_dir <- "/home/enjunyang/Downloads/data/Tong_Wei_Covid"
+panel <- read_csv(paste0(data_dir,"/TW_Covid_panel.csv"))
+all_markers <- panel %>% filter(Type =="type") %>% pull(Antigen) %>% str_remove_all("[ _-]")
+meta <- read.table(paste0(data_dir, "/Covid_batch_metadata.tsv"), sep=";")
+library(Spectre)
+Spectre::package.check
+Spectre::package.load()
+B.cell.dat <- readRDS("B_cell_dat.RDS")
+cellular.cols <- names(B.cell.dat)[c(3:30)]
+cluster.cols <- cellular.cols
+group.col <- "condition"
+CD4.cell.sub <- readRDS("CD4_cell_sub.RDS")
+### Trimming off extreme UMAP values
+range(B.cell.dat$UMAP_X)
+quantile(B.cell.dat$UMAP_X, probs= c(0, 0.01, 0.02, 0.05, 0.1, 0.9, 0.95, 0.98, 0.99, 1))
+quantile(B.cell.dat$UMAP_X, probs= c(0, 0.005, 0.01, 0.05, 0.1, 0.9, 0.95, 0.99, 0.995, 1))
+B.cell.dat.trimmed <- subset(B.cell.dat, UMAP_X > -10)
+B.cell.dat.trimmed <- subset(B.cell.dat.trimmed, UMAP_X < 10)
+quantile(B.cell.dat$UMAP_Y, probs= c(0, 0.01, 0.02, 0.05, 0.1, 0.9, 0.95, 0.98, 0.99, 1))
+quantile(B.cell.dat$UMAP_Y, probs= c(0, 0.05, 0.06, 0.07, 0.1, 0.9, 0.95, 0.98, 0.99, 1))
+B.cell.dat.trimmed <- subset(B.cell.dat.trimmed, UMAP_Y > -10)
+B.cell.dat.trimmed <- subset(B.cell.dat.trimmed, UMAP_Y < 20)
+(NROW(B.cell.dat) - NROW(B.cell.dat.trimmed))/NROW(B.cell.dat) * 100
+## removed 6.45% of B cells after UMAP QC
+names(B.cell.dat)
+B.cell.dat.trimmed$FlowSOM_cluster <- NULL
+B.cell.dat.trimmed$FlowSOM_metacluster <- NULL
+names(B.cell.dat.trimmed)
+B.cell.dat.trimmed <- run.flowsom(B.cell.dat.trimmed, cluster.cols, meta.k=20)
+quantile(CD4.cell.sub$UMAP_X, probs= c(0, 0.01, 0.02, 0.05, 0.1, 0.9, 0.95, 0.98, 0.99, 1))
+quantile(CD4.cell.sub$UMAP_Y, probs= c(0, 0.01, 0.02, 0.05, 0.1, 0.9, 0.95, 0.98, 0.99, 1))
+### CD4 UMAP doesn't require trimming. It appears there may be some highly autofluorescent cells in some gates that get removed upon extra gating
+CD4.cell.sub <- run.flowsom(CD4.cell.sub, cluster.cols, meta.k=20)
+###Redrawing some plots, as approach was different this time
+###Ran FlowSOM AFTER trimming UMAP outliers, not before
+make.colour.plot(B.cell.dat.trimmed, "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", col.type='factor', add.label=TRUE, title="CD19-FlowSOM_k20-UMAP-centered", dot.size=0.001)
+make.multi.plot(B.cell.dat.trimmed, "UMAP_X", "UMAP_Y", group.col, divide.by=group.col, col.type='factor', figure.title="trimmed_CD19_split_condition", dot.size=0.001)
+exp <- do.aggregate(B.cell.dat.trimmed, cellular.cols, by="FlowSOM_metacluster")
+make.pheatmap(exp, "FlowSOM_metacluster", cellular.cols, file.name="trimmed_CD19_sample_heatmap.png")
+make.multi.plot(B.cell.dat.trimmed, "UMAP_X", "UMAP_Y", cellular.cols, figure.title="trimmed_CD19_density_multiplot", dot.size=0.001)
+### drawing CD4 plots too
+make.colour.plot(CD4.cell.sub, "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", col.type='factor', add.label=TRUE, title="CD4-FlowSOM_k20-UMAP-centered", dot.size=0.001)
+make.multi.plot(CD4.cell.sub, "UMAP_X", "UMAP_Y", group.col, divide.by=group.col, col.type='factor', figure.title="CD4_split_condition", dot.size=0.001)
+exp <- do.aggregate(CD4.cell.sub, cellular.cols, by="FlowSOM_metacluster")
+make.pheatmap(exp, "FlowSOM_metacluster", cellular.cols, file.name="CD4_sample_heatmap.png")
+make.multi.plot(CD4.cell.sub, "UMAP_X", "UMAP_Y", cellular.cols, figure.title="CD4_density_multiplot", dot.size=0.001)
+### Splitting into separate timepoints
+saveRDS(B.cell.dat.trimmed, "B_cell_dat_trimmed.RDS")
+saveRDS(CD4.cell.sub, "CD4_cell_sub.RDS")
+### will work from raw (non-subset, non-trimmed) data
+CD4.cell.dat <- readRDS("CD4_cell_dat.RDS")
+names(CD4.cell.dat)
+names(B.cell.dat)
+B.cell.dat$FlowSOM_metacluster <- NULL
+B.cell.dat$FlowSOM_cluster <- NULL
+B.cell.dat$UMAP_X <- NULL
+B.cell.dat$UMAP_Y <- NULL
+cell.dat.list <- split(B.cell.dat, B.cell.dat$Timepoint)
+sapply(cell.dat.list, NROW)
+### 211142 225828 176222 105528 13046 cells for timepoints 1 thru 5
+cell.dat.list1 <- lapply(cell.dat.list, function(x) run.umap(x, cluster.cols))
+saveRDS(cell.dat.list1, "B_cell_dat_list.RDS")
+Tcell.dat.list <- split(CD4.cell.dat, CD4.cell.dat$Timepoint)
+sapply(Tcell.dat.list, NROW)
+### 697978 730968 624245 337744 43978 CD4 T cells for timepoints 1 thru 5
+Tcell.dat.list1 <- lapply(Tcell.dat.list, function(x) run.umap(x, cluster.cols))
+saveRDS(Tcell.dat.list1, "T_cell_dat_list.RDS")
+savehistory("20220618_CD4.history")
+
+### continuing from 20220618 dat.list clustering
+library(renv)
+renv::activate(project="~/bin/cyCombine")
+library(cyCombine)
+library(magrittr)
+library(tidyverse)
+data_dir <- "/home/enjunyang/Downloads/data/Tong_Wei_Covid"
+panel <- read_csv(paste0(data_dir,"/TW_Covid_panel.csv"))
+all_markers <- panel %>% filter(Type =="type") %>% pull(Antigen) %>% str_remove_all("[ _-]")
+meta <- read.table(paste0(data_dir, "/Covid_batch_metadata.tsv"), sep=";")
+library(Spectre)
+Spectre::package.check
+Spectre::package.load()
+B.cell.dat <- readRDS("B_cell_dat.RDS")
+cellular.cols <- names(B.cell.dat)[c(3:30)]
+cluster.cols <- cellular.cols
+group.col <- "condition"
+Tcell.dat.list <- readRDS("T_cell_dat_list.RDS")
+Bcell.dat.list <- readRDS("B_cell_dat_list.RDS")
+cell.dat.list1 <- lapply(Bcell.dat.list, function(x) subset(x, UMAP_X > -20))
+cell.dat.list1 <- lapply(cell.dat.list1, function(x) subset(x, UMAP_X < 20))
+cell.dat.list1 <- lapply(cell.dat.list1, function(x) subset(x, UMAP_Y > -20))
+cell.dat.list1 <- lapply(cell.dat.list1, function(x) subset(x, UMAP_Y < 20))
+cell.dat.list1[[1]] <- subset(cell.dat.list1[[1]], UMAP_X < 10)
+cell.dat.list1[[1]] <- subset(cell.dat.list1[[1]], UMAP_Y > -10)
+cell.dat.list1[[2]] <- subset(cell.dat.list1[[2]], UMAP_Y < 10)
+cell.dat.list1[[4]] <- subset(cell.dat.list1[[4]], UMAP_Y > -5 )
+cell.dat.list1[[5]] <- subset(cell.dat.list1[[5]], UMAP_Y > 0 )
+### Used cutoffs from previous analysis
+cell.dat.list <- cell.dat.list1
+as.matrix(names(cell.dat.list1[[1]]))
+toplot <- names(cell.dat.list1[[1]])[c(40,41,43,46,48,49)]
+for (i in names(cell.dat.list)) {
+dir.create(paste0("B_cells_",i))
+}
+cell.dat.list <- lapply(cell.dat.list, function(x) run.flowsom(x, cluster.cols, meta.k=20))
+for (i in names(cell.dat.list)) {
+make.colour.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", col.type='factor', add.label=TRUE, filename=paste0("B_cells_", i,"/timepoint", i, "_FlowSOMcluster_colorplot.png"), dot.size=0.001)
+}
+for (i in names(cell.dat.list)) {
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", group.col, divide.by=group.col, col.type='factor', add.label=TRUE, filename=paste0("B_cells_", i,"/timepoint", i, "_FlowSOMcluster_colorplot_split_condition.png"), dot.size=0.001)
+}
+for (i in names(cell.dat.list)) {
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", group.col, divide.by=group.col, col.type='factor', figure.title=paste0("B_cells_", i,"/timepoint", i, "_FlowSOMcluster_split_condition"), dot.size=0.001)
+}
+dev.off()
+for (i in names(cell.dat.list)) {
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", cellular.cols, divide.by=group.col, figure.title=paste0("B_cells_", i,"/timepoint", i , "_density_multiplot"), dot.size=0.001)
+}
+for (i in names(cell.dat.list)) {
+exp <- do.aggregate(cell.dat.list[[i]], cellular.cols, by="FlowSOM_metacluster")
+make.pheatmap(exp, "FlowSOM_metacluster", cellular.cols, file.name=paste0("B_cells_", i,"/timepoint", i, "_heatmap.png"))
+}
+for (i in names(cell.dat.list)) {
+for (j in toplot){
+if(!all(is.na(as.factor(cell.dat.list[[i]][[j]])))){
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", j, col.type='factor', figure.title=paste0("B_cells_", i, "/timepoint", i, "_split_",j), dot.size=0.001)
+} else {
+}
+}
+}
+savehistory("20220619_test.txt")
+### Start on T cells now
+cell.dat.list <- Tcell.dat.list
+for (i in names(cell.dat.list)) {
+dir.create(paste0("T_cells_",i))
+}
+cell.dat.list <- lapply(cell.dat.list, function(x) run.flowsom(x, cluster.cols, meta.k=20))
+for (i in names(cell.dat.list)) {
+for (i in names(cell.dat.list)) {
+dir.create(paste0("CD4T_cells_",i))
+}
+for (i in names(cell.dat.list)) {
+make.colour.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", col.type='factor', add.label=TRUE, filename=paste0("CD4T_cells_", i,"/timepoint", i, "_FlowSOMcluster_colorplot.png"), dot.size=0.001)
+}
+for (i in names(cell.dat.list)) {
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", group.col, divide.by=group.col, col.type='factor', add.label=TRUE, filename=paste0("CD4T_cells_", i,"/timepoint", i, "_FlowSOMcluster_colorplot_split_condition.png"), dot.size=0.001)
+}
+for (i in names(cell.dat.list)) {
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", group.col, divide.by=group.col, col.type='factor', figure.title=paste0("CD4T_cells_", i,"/timepoint", i, "_FlowSOMcluster_split_condition"), dot.size=0.001)
+}
+for (i in names(cell.dat.list)) {
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", cellular.cols, divide.by=group.col, figure.title=paste0("CD4T_cells_", i,"/timepoint", i , "_density_multiplot"), dot.size=0.001)
+}
+for (i in names(cell.dat.list)) {
+exp <- do.aggregate(cell.dat.list[[i]], cellular.cols, by="FlowSOM_metacluster")
+make.pheatmap(exp, "FlowSOM_metacluster", cellular.cols, file.name=paste0("CD4T_cells_", i,"/timepoint", i, "_heatmap.png"))
+}
+for (i in names(cell.dat.list)) {
+for (j in toplot){
+if(!all(is.na(as.factor(cell.dat.list[[i]][[j]])))){
+make.multi.plot(cell.dat.list[[i]], "UMAP_X", "UMAP_Y", j, col.type='factor', figure.title=paste0("CD4T_cells_", i, "/timepoint", i, "_split_",j), dot.size=0.001)
+} else {
+}
+}
+}
+savehistory("20220619_CD4_plots.history")
+

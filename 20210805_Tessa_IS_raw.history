@@ -1,0 +1,463 @@
+setwd("/Users/enjunyang/Documents/JEC lab/Analysis/Tessa/TES02GW")
+dat <- read.csv("TES02GW_JobID_ISA_IStable_V1_ProjectID_sentDate.csv", header=TRUE, stringsAsFactors=FALSE)
+str(dat)
+head(dat)
+### Splitting files by Sample
+dat1 <- dat[which(dat$Sample=="TCx21x0041"),]
+dat2 <- dat[which(dat$Sample=="P32T008"),]
+dat3 <- dat[which(dat$Sample=="TCx20x0103"),]
+dat4 <- dat[which(dat$Sample=="P32T009"),]
+### Confirming no data is lost from original matrix
+length(rownames(dat)) - length(rownames(dat1)) - length(rownames(dat2)) - length(rownames(dat3))-length(rownames(dat4))
+### Sorting data by Sequence (read) Count WITHOUT summation
+library(plyr)
+dat1_1 <- arrange (dat1, desc(Sequence.Count))
+head(dat1_1)
+write.table (dat1_1, file="IS_by_locus/TC21_0041.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat2_1 <- arrange (dat2, desc(Sequence.Count))
+write.table (dat2_1, file="IS_by_locus/P32_T008.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat3_1 <- arrange (dat3, desc(Sequence.Count))
+write.table (dat3_1, file="IS_by_locus/TC20_0103.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat4_1 <- arrange (dat4, desc(Sequence.Count))
+write.table (dat4_1, file="IS_by_locus/P32_T009.csv", sep=",", quote=FALSE, row.names=FALSE)
+### Sorting data by Sequence (read) Count AFTER summation by Gene
+dat1_2 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat1, FUN=sum)
+dat1_2 <- arrange(dat1_2, desc(Sequence.Count))
+dat1_2$Sample="TCx21x0041"
+write.table (dat1_2, file="IS_by_gene_all/TC21_0041_IS_by_gene_all.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat2_2 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat2, FUN=sum)
+dat2_2 <- arrange(dat2_2, desc(Sequence.Count))
+dat2_2$Sample="P32T008"
+write.table (dat2_2, file="IS_by_gene_all/P32_T008_IS_by_gene_all.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat3_2 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat3, FUN=sum)
+dat3_2 <- arrange(dat3_2, desc(Sequence.Count))
+dat3_2$Sample="TCx20x0103"
+write.table (dat3_2, file="IS_by_gene_all/TC20_0103_IS_by_gene_all.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat4_2 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat4, FUN=sum)
+dat4_2 <- arrange(dat4_2, desc(Sequence.Count))
+dat4_2$Sample="P32T009"
+write.table (dat4_2, file="IS_by_gene_all/P32_T009_IS_by_gene_all.csv", sep=",", quote=FALSE, row.names=FALSE)
+### Cutting out IS that are more than 1kb from any gene
+dat1_3 <- dat1[-which(dat1$Upstream.of.TTS..bp.>1000),]
+dat1_3 <- dat1_3[-which(dat1_3$Downstream.of.Gene>1000),]
+length(which(dat1$Upstream.of.TTS..bp.>1000 & is.na(dat1$In.Gene.Distance.to.TSS..bp.)))
+length(which(dat1$Downstream.of.Gene>1000 & is.na(dat1$In.Gene.Distance.to.TSS..bp.)))
+length(dat1$Span)
+length(dat1_3$Span)
+dat2_3 <- dat2[-which(dat2$Upstream.of.TTS..bp.>1000),]
+dat2_3 <- dat2_3[-which(dat2_3$Downstream.of.Gene>1000),]
+length(which(dat2$Upstream.of.TTS..bp.>1000 & is.na(dat2$In.Gene.Distance.to.TSS..bp.)))
+length(which(dat2$Downstream.of.Gene>1000 & is.na(dat2$In.Gene.Distance.to.TSS..bp.)))
+length(dat2$Span)
+length(dat2_3$Span)
+dat3_3 <- dat3[-which(dat3$Upstream.of.TTS..bp.>1000),]
+dat3_3 <- dat3_3[-which(dat3_3$Downstream.of.Gene>1000),]
+length(which(dat3$Upstream.of.TTS..bp.>1000 & is.na(dat3$In.Gene.Distance.to.TSS..bp.)))
+length(which(dat3$Downstream.of.Gene>1000 & is.na(dat3$In.Gene.Distance.to.TSS..bp.)))
+length(dat3$Span)
+length(dat3_3$Span)
+dat4_3 <- dat4[-which(dat4$Upstream.of.TTS..bp.>1000),]
+dat4_3 <- dat4_3[-which(dat4_3$Downstream.of.Gene>1000),]
+length(which(dat4$Upstream.of.TTS..bp.>1000 & is.na(dat4$In.Gene.Distance.to.TSS..bp.)))
+length(which(dat4$Downstream.of.Gene>1000 & is.na(dat4$In.Gene.Distance.to.TSS..bp.)))
+length(dat4$Span)
+length(dat4_3$Span)
+### Sorting truncated data by Sequence Count and by Gene
+dat1_4 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat1_3, FUN=sum)
+dat1_4 <- arrange(dat1_4, desc(Sequence.Count))
+dat1_4$Sample="TCx21x0041"
+write.table (dat1_4, file="IS_by_gene_1kb/TC21_0041_IS_by_gene_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat2_4 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat2_3, FUN=sum)
+dat2_4 <- arrange(dat2_4, desc(Sequence.Count))
+dat2_4$Sample="P32T008"
+write.table (dat2_4, file="IS_by_gene_1kb/P32_T008_IS_by_gene_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat3_4 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat3_3, FUN=sum)
+dat3_4 <- arrange(dat3_4, desc(Sequence.Count))
+dat3_4$Sample="TCx20x0103"
+write.table (dat3_4, file="IS_by_gene_1kb/TC20_0103_IS_by_gene_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+dat4_4 <- aggregate(Sequence.Count ~ RefSeq.Gene, data=dat4_3, FUN=sum)
+dat4_4 <- arrange(dat4_4, desc(Sequence.Count))
+dat4_4$Sample="P32T009"
+write.table (dat4_4, file="IS_by_gene_1kb/P32_T009_IS_by_gene_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+sum(dat1$Sequence.Count)
+sum(dat1_4$Sequence.Count)
+sum(dat2$Sequence.Count)
+sum(dat2_4$Sequence.Count)
+sum(dat3$Sequence.Count)
+sum(dat3_4$Sequence.Count)
+sum(dat4$Sequence.Count)
+sum(dat4_4$Sequence.Count)
+### Starting to plot figures here
+library(ggplot2)
+testdat <- rbind(dat1_1[c(1:50),],dat2_1[c(1:50),],dat3_1[c(1:50),],dat4_1[c(1:50),])
+ggplot(testdat, aes(y=Sequence.Count, x=Sample, fill=RefSeq.Gene)) + geom_bar(position="stack", stat="identity")
+ggplot(dat1_1[c(1:50),], aes(y=Sequence.Count, x=Sample, fill=RefSeq.Gene)) + geom_bar(position="stack", stat="identity")
+ggplot(dat1_1[c(1:50),], aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity") + ylim(-10,20) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank(), plot.margin=unit(rep(-2,4),"cm"))
+testdat <- dat1_1[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity") + ylim(-10,40) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank(), plot.margin=unit(rep(-1,4),"cm")) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 5, xend = 1, yend = 5), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 10, xend = 1, yend = 10), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_by_Chromosome_Location", subtitle="{Each ring is 5 counts}")+ geom_segment(data=testdat1, aes(x = 50, y = 15, xend = 1, yend = 15), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + ylim(-10,40) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 5, xend = 1, yend = 5), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 10, xend = 1, yend = 10), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_by_Chromosome_Location", subtitle="{Each ring is 5 counts}") + ylim(-10,40) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_locus/TC21_0041_top50.png", plot = p, device="png")
+testdat <- dat3_1[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="red") + geom_segment(data=testdat1, aes(x = 50, y = 10, xend = 1, yend = 10), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 20, xend = 1, yend = 20), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC20_0103_top50_by_Chromosome_Location", subtitle="{Each ring is 10 counts}") + ylim(-10,40) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_locus/TC20_0103_top50.png", plot = p, device="png")
+testdat <- dat2_1[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="green") + geom_segment(data=testdat1, aes(x = 50, y = 10, xend = 1, yend = 10), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 20, xend = 1, yend = 20), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 30, xend = 1, yend = 30), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 40, xend = 1, yend = 40), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T008_top50_by_Chromosome_Location", subtitle="{Each ring is 10 counts}") + ylim(-10,60) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_locus/P32_T008_top50.png", plot = p, device="png")
+testdat <- dat4_1[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+testdat1[which(testdat1$RefSeq.Gene=="SLC4A10"),]
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="dark green") + geom_segment(data=testdat1, aes(x = 50, y = 10, xend = 1, yend = 10), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 20, xend = 1, yend = 20), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 30, xend = 1, yend = 30), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T009_top50_by_Chromosome_Location", subtitle="{Each ring is 10 counts}\n###SLC4A10 had 2 insertion loci with 18 counts each") + ylim(-10,40) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_locus/P32_T009_top50.png", plot = p, device="png")
+testdat <- dat1_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_by_Gene", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_all/TC21_0041_top50.png", plot = p, device="png")
+testdat <- dat2_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 400, xend = 1, yend = 400), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T008_top50_by_Gene", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_all/P32_T008_top50.png", plot = p, device="png")
+testdat <- dat3_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="red") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC20_0103_top50_by_Gene", subtitle="{Each ring is 100 counts}") + ylim(-10,300) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_all/TC20_0103_top50.png", plot = p, device="png")
+testdat <- dat4_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="dark green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T009_top50_by_Gene", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_all/P32_T009_top50.png", plot = p, device="png")
+testdat <- rbind(dat1_2[c(1:50),],dat2_2[c(1:50),],dat3_2[c(1:50),],dat4_2[c(1:50),])
+testdat1 <- testdat[(duplicated(testdat$RefSeq.Gene) | duplicated(testdat$RefSeq.Gene, fromLast=TRUE)),]
+table((table(testdat1$RefSeq.Gene)))
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene, fill=Sample)) + geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("green", "dark green", "red", "blue")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave(filename="IS_by_gene_all/all_IS_by_gene_top50_overlap.png", plot = p, device="png")
+testdat <- rbind(dat1_1[c(1:50),],dat2_1[c(1:50),],dat3_1[c(1:50),],dat4_1[c(1:50),])
+testdat1 <- testdat[(duplicated(testdat$RefSeq.Gene) | duplicated(testdat$RefSeq.Gene, fromLast=TRUE)),]
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene, fill=Sample)) + geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("green", "dark green", "red", "blue"))  + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave(filename="IS_by_locus/top50_overlap.png", plot = p, device="png")
+testdat <- dat1_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_by_Gene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_1kb/TC21_0041_top50_1kb.png", plot = p, device="png")
+testdat <- dat2_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T008_top50_by_Gene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_1kb/P32_T008_top50_1kb.png", plot = p, device="png")
+testdat <- dat3_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="red") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC20_0103_top50_by_Gene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,300) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_1kb/TC20_0103_top50_1kb.png", plot = p, device="png")
+testdat <- dat4_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="dark green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T009_top50_by_Gene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="IS_by_gene_1kb/P32_T009_top50_1kb.png", plot = p, device="png")
+testdat <- rbind(dat1_4[c(1:50),],dat2_4[c(1:50),],dat3_4[c(1:50),],dat4_4[c(1:50),])
+testdat1 <- testdat[(duplicated(testdat$RefSeq.Gene) | duplicated(testdat$RefSeq.Gene, fromLast=TRUE)),]
+table((table(testdat1$RefSeq.Gene)))
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene, fill=Sample)) + geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("green", "dark green", "red", "blue")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave(filename="IS_by_gene_1kb/IS_by_gene_1kb_top50_overlap.png", plot = p, device="png")
+### Oncogene analysis starts here
+Onc <- read.table("20210803_oncogene_human.txt", sep="\t", header=TRUE, stringsAsFactors=FALSE, quote="")
+str(Onc)
+Oncalias <- Onc$Alias
+Oncalias1 <- sapply(Oncalias, strsplit, "\\|")
+Oncalias1 <- unlist(Oncalias1)
+Oncalias2 <- c(Oncalias1, Onc$OncogeneName)
+Oncalias2 <- unique(Oncalias2)
+Onc1_2 <- dat1_2[which(dat1_2$RefSeq.Gene %in% Oncalias2),]
+Onc2_2 <- dat2_2[which(dat2_2$RefSeq.Gene %in% Oncalias2),]
+Onc3_2 <- dat3_2[which(dat3_2$RefSeq.Gene %in% Oncalias2),]
+Onc4_2 <- dat4_2[which(dat4_2$RefSeq.Gene %in% Oncalias2),]
+write.table (Onc1_2, file="Oncogene/TC21_0041.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (Onc2_2, file="Oncogene/P32_T008.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (Onc3_2, file="Oncogene/TC20_0103.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (Onc4_2, file="Oncogene/P32_T009.csv", sep=",", quote=FALSE, row.names=FALSE)
+testdat <- Onc1_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_Oncogene", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/TC21_0041_top50_onco.png", plot = p, device="png")
+testdat <- Onc2_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T008_top50_Oncogene", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/P32_T008_top50_onco.png", plot = p, device="png")
+testdat <- Onc3_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="red") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC20_0103_top50_Oncogene", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/TC20_0103_top50_onco.png", plot = p, device="png")
+testdat <- Onc4_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="dark green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T009_top50_Oncogene", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/P32_T009_top50_onco.png", plot = p, device="png")
+testdat <- rbind(Onc1_2[c(1:50),],Onc2_2[c(1:50),],Onc3_2[c(1:50),],Onc4_2[c(1:50),])
+testdat1 <- testdat[(duplicated(testdat$RefSeq.Gene) | duplicated(testdat$RefSeq.Gene, fromLast=TRUE)),]
+table((table(testdat1$RefSeq.Gene)))
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene, fill=Sample)) + geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("green", "dark green", "red", "blue")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave(filename="Oncogene/all_IS_in_Oncogene_top50_overlap.png", plot = p, device="png")
+length(Onc1_2$RefSeq.Gene)
+sum(Onc1_2$Sequence.Count)
+length(Onc2_2$RefSeq.Gene)
+sum(Onc3_2$Sequence.Count)
+length(Onc3_2$RefSeq.Gene)
+sum(Onc2_2$Sequence.Count)
+length(Onc4_2$RefSeq.Gene)
+sum(Onc4_2$Sequence.Count)
+Onc1_4 <- dat1_4[which(dat1_4$RefSeq.Gene %in% Oncalias2),]
+Onc2_4 <- dat2_4[which(dat2_4$RefSeq.Gene %in% Oncalias2),]
+Onc3_4 <- dat3_4[which(dat3_4$RefSeq.Gene %in% Oncalias2),]
+Onc4_4 <- dat4_4[which(dat4_4$RefSeq.Gene %in% Oncalias2),]
+write.table (Onc1_4, file="Oncogene/TC21_0041_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (Onc2_4, file="Oncogene/P32_T008_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (Onc3_4, file="Oncogene/TC20_0103_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (Onc4_4, file="Oncogene/P32_T009_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+testdat <- Onc1_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_Oncogene_1kb", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/TC21_0041_top50_onco_1kb.png", plot = p, device="png")
+testdat <- Onc3_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="red") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC20_0103_top50_Oncogene_1kb", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/TC20_0103_top50_onco_1kb.png", plot = p, device="png")
+testdat <- Onc4_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="dark green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T009_top50_Oncogene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/P32_T009_top50_onco_1kb.png", plot = p, device="png")
+testdat <- Onc2_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T008_top50_Oncogene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="Oncogene/P32_T008_top50_onco_1kb.png", plot = p, device="png")
+testdat <- rbind(Onc1_4[c(1:50),],Onc2_4[c(1:50),],Onc3_4[c(1:50),],Onc4_4[c(1:50),])
+testdat1 <- testdat[(duplicated(testdat$RefSeq.Gene) | duplicated(testdat$RefSeq.Gene, fromLast=TRUE)),]
+table((table(testdat1$RefSeq.Gene)))
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene, fill=Sample)) + geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("green", "dark green", "red", "blue")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave(filename="Oncogene/Oncogene_top50_overlap_in_1kb.png", plot = p, device="png")
+length(Onc1_4$RefSeq.Gene)
+sum(Onc1_4$Sequence.Count)
+length(Onc2_4$RefSeq.Gene)
+sum(Onc2_4$Sequence.Count)
+length(Onc3_4$RefSeq.Gene)
+sum(Onc3_4$Sequence.Count)
+length(Onc4_4$RefSeq.Gene)
+sum(Onc4_4$Sequence.Count)
+### Tumor suppressor analysis starts here
+TSG <- read.table("20210803_Human_TSGs_UT.txt", sep="\t", header=TRUE, stringsAsFactors=FALSE, quote="")
+str(TSG)
+TSalias <- TSG$Alias
+TSalias1 <- sapply(TSalias, strsplit, "\\|")
+TSalias1 <- unlist(TSalias1)
+TSalias2 <- c(TSalias1, TSG$GeneSymbol)
+TSalias2 <- unique(TSalias2)
+tsg1_2 <- dat1_2[which(dat1_2$RefSeq.Gene %in% TSalias2),]
+tsg2_2 <- dat2_2[which(dat2_2$RefSeq.Gene %in% TSalias2),]
+tsg3_2 <- dat3_2[which(dat3_2$RefSeq.Gene %in% TSalias2),]
+tsg4_2 <- dat4_2[which(dat4_2$RefSeq.Gene %in% TSalias2),]
+write.table (tsg1_2, file="TSgene/TC21_0041.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (tsg2_2, file="TSgene/P32_T008.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (tsg3_2, file="TSgene/TC20_0103.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (tsg4_2, file="TSgene/P32_T009.csv", sep=",", quote=FALSE, row.names=FALSE)
+testdat <- tsg1_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_TSgene", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/TC21_0041_top50_TSgene.png", plot = p, device="png")
+testdat <- tsg2_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T008_top50_TSgene", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/P32_T008_top50_TSgene.png", plot = p, device="png")
+testdat <- tsg3_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="red") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC20_0103_top50_TSgene", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/TC20_0103_top50_TSgene.png", plot = p, device="png")
+testdat <- tsg4_2[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="dark green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T009_top50_TSgene", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/P32_T009_top50_TSgene.png", plot = p, device="png")
+testdat <- rbind(tsg1_2[c(1:50),],tsg2_2[c(1:50),],tsg3_2[c(1:50),],tsg4_2[c(1:50),])
+testdat1 <- testdat[(duplicated(testdat$RefSeq.Gene) | duplicated(testdat$RefSeq.Gene, fromLast=TRUE)),]
+table((table(testdat1$RefSeq.Gene)))
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene, fill=Sample)) + geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("green", "dark green", "red", "blue")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave(filename="TSgene/all_IS_in_TSgene_top50_overlap.png", plot = p, device="png")
+tsg1_4 <- dat1_4[which(dat1_4$RefSeq.Gene %in% TSalias2),]
+tsg2_4 <- dat2_4[which(dat2_4$RefSeq.Gene %in% TSalias2),]
+tsg3_4 <- dat3_4[which(dat3_4$RefSeq.Gene %in% TSalias2),]
+tsg4_4 <- dat4_4[which(dat4_4$RefSeq.Gene %in% TSalias2),]
+write.table (tsg1_4, file="TSgene/TC21_0041_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (tsg2_4, file="TSgene/P32_T008_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (tsg3_4, file="TSgene/TC20_0103_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+write.table (tsg4_4, file="TSgene/P32_T009_1kb.csv", sep=",", quote=FALSE, row.names=FALSE)
+testdat <- tsg1_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="blue") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC21_0041_top50_TSgene_1kb", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/TC21_0041_top50_TSgene_1kb.png", plot = p, device="png")
+testdat <- tsg2_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T008_top50_TSgene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/P32_T008_top50_TSgene_1kb.png", plot = p, device="png")
+testdat <- tsg3_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="red") + geom_segment(data=testdat1, aes(x = 50, y = 50, xend = 1, yend = 50), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 150, xend = 1, yend = 150), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="TC20_0103_top50_TSgene_1kb", subtitle="{Each ring is 50 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/TC20_0103_top50_TSgene_1kb.png", plot = p, device="png")
+testdat <- tsg4_4[c(1:50),]
+testdat1 <- testdat[order(testdat$RefSeq.Gene),]
+rownames(testdat1) <- c(1:50)
+range(testdat1$Sequence.Count)
+angle <- 90 - 360 * (as.numeric(rownames(testdat1))-0.5)/50
+testdat1$hjust <- ifelse( angle < -90, 1, 0)
+testdat1$angle <- ifelse(angle < -90, angle+180, angle)
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene)) + geom_bar(position="stack", stat="identity", fill="dark green") + geom_segment(data=testdat1, aes(x = 50, y = 100, xend = 1, yend = 100), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 200, xend = 1, yend = 200), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + geom_segment(data=testdat1, aes(x = 50, y = 300, xend = 1, yend = 300), colour = "light grey", alpha=1, size=0.3 , inherit.aes = FALSE ) + labs(title="P32_T009_top50_TSgene_1kb", subtitle="{Each ring is 100 counts}") + ylim(-10,450) + theme_minimal() + coord_polar(start=0) + theme(axis.text=element_blank(), axis.title=element_blank(), panel.grid=element_blank()) + geom_text(data=testdat1, aes(x=RefSeq.Gene, y=Sequence.Count+1, label=RefSeq.Gene, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= testdat1$angle, inherit.aes = FALSE )
+ggsave(filename="TSgene/P32_T009_top50_TSgene_1kb.png", plot = p, device="png")
+testdat <- rbind(tsg1_4[c(1:50),],tsg2_4[c(1:50),],tsg3_4[c(1:50),],tsg4_4[c(1:50),])
+testdat1 <- testdat[(duplicated(testdat$RefSeq.Gene) | duplicated(testdat$RefSeq.Gene, fromLast=TRUE)),]
+table((table(testdat1$RefSeq.Gene)))
+p <- ggplot(testdat1, aes(y=Sequence.Count, x=RefSeq.Gene, fill=Sample)) + geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("green", "dark green", "red", "blue")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggsave(filename="TSgene/TSgene_top50_overlap_in_1kb.png", plot = p, device="png")
+length(tsg1_2$RefSeq.Gene)
+sum(tsg1_2$Sequence.Count)
+length(tsg2_2$RefSeq.Gene)
+sum(tsg2_2$Sequence.Count)
+length(tsg3_2$RefSeq.Gene)
+sum(tsg3_2$Sequence.Count)
+length(tsg4_2$RefSeq.Gene)
+sum(tsg4_2$Sequence.Count)
+length(tsg1_4$RefSeq.Gene)
+sum(tsg1_4$Sequence.Count)
+length(tsg2_4$RefSeq.Gene)
+sum(tsg2_4$Sequence.Count)
+length(tsg3_4$RefSeq.Gene)
+sum(tsg3_4$Sequence.Count)
+length(tsg4_4$RefSeq.Gene)
+sum(tsg4_4$Sequence.Count)
