@@ -1,0 +1,179 @@
+library(vegan)
+library(fields)
+library(fpc)
+library(fpc)
+library(ggplot2)
+library(gplots)
+library(hexbin)
+library(MASS)
+library(NODES)
+library(randomcoloR)
+library(RColorBrewer)
+library(Rtsne)
+library(scatterD3)
+library(tsne)
+library(WGCNA)
+library(vegan)
+library(apcluster)
+library(mclust)
+library(fields)
+library(fpc)
+library(ggplot2)
+library(gplots)
+library(hexbin)
+library(MASS)
+library(NODES)
+library(randomcoloR)
+library(RColorBrewer)
+library(Rtsne)
+library(scatterD3)
+library(tsne)
+library(WGCNA)
+name <- read.table("name-map.txt", stringsAsFactors=F)
+rna <- read.table("RNAs")
+d.no <- read.table("all.no")
+d.yes <- read.table("all.yes")
+d.rev <- read.table("all.rev")
+count.no <- d.no[setdiff(rownames(d.no[1:(nrow(d.no)-5),]), rna[,1]),]
+count.yes <- d.yes[setdiff(rownames(d.yes[1:(nrow(d.yes)-5),]), rna[,1]),]
+count.rev <- d.rev[setdiff(rownames(d.rev[1:(nrow(d.rev)-5),]), rna[,1]),]
+norm.no <- pQ(count.no)
+norm.yes <- pQ(count.yes)
+norm.rev <- pQ(count.rev)
+nodes.no <- NODES(norm.no, name[colnames(norm.no),"Sample"])
+nodes.yes <- NODES(norm.yes, name[colnames(norm.yes),"Sample"])
+nodes.rev <- NODES(norm.rev, name[colnames(norm.rev),"Sample"])
+for_tsne <- t(norm.no)
+tsne <- Rtsne(as.matrix(for_tsne), check_duplicates = FALSE, pca = FALSE, perplexity=2, theta=0.5, dims=2)
+source("~/myFunctions.R")
+pr.no <- prcomp(t(norm.no))
+tsne <- Rtsne(as.matrix(for_tsne), check_duplicates = FALSE, pca = FALSE, perplexity=2, theta=0.5, dims=2)
+DB <- kmeans(as.data.frame(tsne$Y),centers = 3)
+REP <- DB$cluster
+perplexity <- 5
+iterations <- 1000
+max_clusters <- 10
+ tempt <- Rtsne(as.matrix(for_tsne), check_duplicates = FALSE, pca = FALSE, perplexity=perplexity, theta=0.5, dims=2)
+wssm <- matrix(nrow=iterations, ncol=max_clusters)
+pamk <- vector(mode="integer", length=iterations)
+calinski <- vector(mode="integer", length=iterations)
+bic <- vector(mode="integer", length=iterations)
+apclus <- vector(mode="integer", length=iterations)
+pb <- txtProgressBar(min=0, max=iterations, style=3)
+for (i in 1:iterations) {
+  tempt <- Rtsne(as.matrix(for_tsne), check_duplicates = FALSE, pca = FALSE, perplexity=perplexity, theta=0.5, dims=2)
+  wssm[i,1] <- (nrow(tempt$Y)-1)*sum(apply(tempt$Y, 2, var))
+  for (j in 2:max_clusters) {
+    tempkm <- kmeans(tempt$Y, centers=j)
+    wssm[i,j] <- tempkm$tot.withinss
+  }
+  pamk[i] <- pamk(tempt$Y)$nc
+  fit <- cascadeKM(scale(tempt$Y, center = TRUE,  scale = TRUE), 1, max_clusters, iter = 1000)
+  calinski[i] <- as.numeric(which.max(fit$results[2,]))
+  bic[i] <- dim(Mclust(as.matrix(tempt$Y), G=1:max_clusters)$z)[2]
+  apclus[i] <- length(apcluster(negDistMat(r=2), tempt$Y))
+  setTxtProgressBar(pb, i)
+}
+k <- 4
+clusmat <- matrix(nrow=1000, ncol=nrow(for_tsne))
+for (i in 1:iterations) {
+  tempt <- Rtsne(as.matrix(for_tsne), check_duplicates=FALSE, pca=FALSE, perplexity=perplexity, theta=0.5, dims=2)
+  clusmat[i,] <- kmeans(as.data.frame(tempt$Y), centers=k)$cluster
+setTxtProgressBar(pb, i)
+}
+groupmat <- matrix(nrow=nrow(for_tsne), ncol=nrow(for_tsne))
+rownames(groupmat) <- rownames(for_tsne)
+colnames(groupmat) <- rownames(for_tsne)
+head(name)
+dim(for_tsne)
+clusmat4 <- matrix(nrow=1000,ncol=56)
+heatmap.2(groupmat, trace="none")rownames(groupmat) <- rownames(for_tsne)
+heatmap.2(groupmat, trace="none", ColSideColors=as.character(name[colnames(groupmat), 1]))
+samplecol <- data.frame(Color = c("black", "red", "green", "gray", "black", "magenta", "blue", "white", "black", "brown"), row.names=c(as.character(unique(name[,1])), as.character(unique(name[,3])), as.character(unique(name[,4]))), stringsAsFactors=F)
+samplecol <- data.frame(Color = c("black", "red", "green", "gray", "black", "magenta", "blue", "brown", "black"), row.names=unique(c(as.character(unique(name[,1])), as.character(unique(name[,3])), as.character(unique(name[,4])))), stringsAsFactors=F)
+h <- heatmap.2(groupmat, trace="none", ColSideColors=samplecol[as.character(name[colnames(groupmat), 1]),1], RowSideColors=samplecol[as.character(name[rownames(groupmat), 4]),1])
+groupmat
+groupmat <- matrix(nrow=nrow(for_tsne), ncol=nrow(for_tsne))
+groupmat
+for (i in 1:nrow(for_tsne)) {
+  for (j in 1:nrow(for_tsne)) {
+    groupmat[i,] <- length(which(clusmat[,i] == clusmat[,j]))/length(clusmat[,i])
+  }
+}
+groupmat
+h <- heatmap.2(groupmat, trace="none", ColSideColors=samplecol[as.character(name[colnames(groupmat), 1]),1], RowSideColors=samplecol[as.character(name[rownames(groupmat), 4]),1])
+h <- heatmap.2(groupmat, trace="none", ColSideColors=samplecol[as.character(name[colnames(groupmat), 1]),1], RowSideColors=samplecol[as.character(name[rownames(groupmat), 4]),1]
+)
+heatmap.2(groupmat, trace="none", ColSideColors=samplecol[as.character(name[colnames(groupmat), 1]),1], RowSideColors=samplecol[as.character(name[rownames(groupmat), 4]),1])
+myPalette <- colorRampPalette(c("white", "white", "lightslateblue", "orange", "darkred", "black"))(256)
+heatmap.2(as.matrix(to_show), trace="none", col=myPalette, Colv = FALSE, ColSideColors=as.character(REP[order(REP)]), margins = c(15,15), cexCol = 2, cexRow = 1, dendrogram="row", scale="row", lhei = c(3, 8), density.info="none")
+m_normalize <- norm.no
+to_show = log2(m_normalize[KN,]+1)
+heatmap.2(groupmat, trace="none")
+boxplot(wssm/wssm[,1], main=paste(sep="", "Cluster K evaluation (Look for abrupt drop / elbow)\n", iterations, " iterations"), xlab="Number of clusters", ylab="Within cluster / Total cluster variance")
+k <- 4
+clusmat <- matrix(nrow=1000, ncol=nrow(for_tsne))
+for (i in 1:iterations) {
+  tempt <- Rtsne(as.matrix(for_tsne), check_duplicates=FALSE, pca=FALSE, perplexity=perplexity, theta=0.5, dims=2)
+  clusmat[i,] <- kmeans(as.data.frame(tempt$Y), centers=k)$cluster
+setTxtProgressBar(pb, i)
+}
+groupmat <- matrix(nrow=nrow(for_tsne), ncol=nrow(for_tsne))
+rownames(groupmat) <- rownames(for_tsne)
+colnames(groupmat) <- rownames(for_tsne)
+head(colnames(groupmat))
+head(rownames(groupmat))
+head(for_tsne)
+dim(rownames(groupmat))
+str(rownames(groupmat))
+#To change the names for the chart, I need to edit rownames(for_tsne) or rownames(groupmat)
+head(groupmat)
+for (i in 1:nrow(for_tsne)) {
+  for (j in 1:nrow(for_tsne)) {
+    groupmat[i,j] <- length(which(clusmat[,i] == clusmat[,j]))/length(clusmat[,i])
+  }
+}
+head(groupmat)
+samplecol <- data.frame(Color = c("black", "red", "green", "gray", "black", "magenta", "blue", "brown", "black"), row.names=unique(c(as.character(unique(name[,1])), as.character(unique(name[,3])), as.character(unique(name[,4])))), stringsAsFactors=F)
+heatmap.2(groupmat, trace="none", ColSideColors=samplecol[as.character(name[colnames(groupmat), 1]),1], RowSideColors=samplecol[as.character(name[rownames(groupmat), 4]),1])
+h <- heatmap.2(groupmat, trace="none", ColSideColors=samplecol[as.character(name[colnames(groupmat), 1]),1], RowSideColors=samplecol[as.character(name[rownames(groupmat), 4]),1])
+dim(h$carpet)
+(colSums(count.no))
+barplot(colSums(count.no)[rownames(h$carpet)])
+barplot(log10(colSums(count.no)[rownames(h$carpet)]))
+rownames(h$carpet)
+which(name[rownames(h$carpet)[43:56],"Mouse"] == "C57")
+c57comp <- rownames(h$carpet)[43:56]
+c57comp
+c57comp <- c57comp[c(1:6,9:14)
+}
+c57comp <- c57comp[c(1:6,9:14)]
+c57comp
+c3hcomp <- rownames(h$carpet)[1:11]
+c3hcomp
+c3hcomp <- rownames(h$carpet)[1:11]
+c3hcomp <- c3hcomp[c(1:9,11)]
+savehistory(file="21062017_2.Rlog")
+c57 <- count.no[,c57comp]
+dim(c57)
+nornac57 <- c57[setdiff(rownames(c57), levels(rna[,1])),]
+nornac3h <- c3h[setdiff(rownames(c3h), levels(rna[,1])),]
+c3h <- count.no[,c3hcomp]
+dim(c3h)
+nornac3h <- c3h[setdiff(rownames(c3h), levels(rna[,1])),]
+dim(nornac3h)
+dim(nornac57)
+length(setdiff(rownames(c57), levels(rna[,1])))
+typeof(rownames(c3h)
+)
+group <- factor(name[colnames(c3h),1])
+y <- DGEList(counts=c3h, group=group)
+library(edgeR)
+install.packages("edgeR")
+library(edgeR)
+source("https://bioconductor.org/biocLite.R")
+install.packages("edgeR")
+biocLite()
+biocLite(c("edgeR"))
+library(edgeR)
+savehistory(file="21062017_3.Rlog")
